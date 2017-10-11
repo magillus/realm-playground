@@ -5,3 +5,5 @@
 build
 *.iml
 
+/realm-playground.iml
+/local.properties
