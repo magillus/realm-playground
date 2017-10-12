@@ -34,7 +34,7 @@ class RepoGenerator() {
         val random = Random()
         val commits = ArrayList<VcCommit>()
         var now = System.currentTimeMillis()
-        for (i: Int in 0..count) {
+        for (i: Int in 0..count - 1) {
             now -= (random.nextInt(5) * 60000 + random.nextInt(30000))
             commits.add(VcCommit(randomString(16), randomString(random.nextInt(20) + 20), now, users[random.nextInt(users.size)]))
         }
@@ -45,7 +45,7 @@ class RepoGenerator() {
         val txt = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         val sb = StringBuilder()
         val r = Random()
-        for (i in 0..size) {
+        for (i in 0..size - 1) {
             sb.append(txt[r.nextInt(txt.length)])
         }
         return sb.toString()
