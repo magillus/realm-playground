@@ -13,7 +13,7 @@ open class VcRepository(@PrimaryKey var id: String? = null, var url: String? = n
 }
 
 @RealmClass
-open class VcCommit(@PrimaryKey var id: String? = null, var message: String? = null, private var dateTimeMillis: Long = 0, var user: VcUser? = null) : RealmModel {
+open class VcCommit(@PrimaryKey var id: String? = null, var message: String? = null, var dateTimeMillis: Long = 0, var user: VcUser? = null) : RealmModel {
 
     var dateTime: Date
         get() = Date(dateTimeMillis)
