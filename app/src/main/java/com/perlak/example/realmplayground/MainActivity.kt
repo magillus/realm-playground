@@ -8,19 +8,26 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import com.perlak.example.realmplayground.MainActivity.Companion.dateFormatter
 import com.perlak.example.realmplayground.model.RepoGenerator
 import com.perlak.example.realmplayground.model.VcCommit
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
-import io.realm.Realm
-import io.realm.RealmAsyncTask
+import io.realm.*
 import kotlinx.android.synthetic.main.activity_main.*
+import java.text.SimpleDateFormat
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        var dateFormatter = SimpleDateFormat()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        realm = Realm.getDefaultInstance()
 
         btnGenerate.setOnClickListener { v ->
             Single.fromCallable {
@@ -34,31 +41,48 @@ class MainActivity : AppCompatActivity() {
                 }
             }.subscribeOn(Schedulers.io()).subscribe()
         }
+        btnToggleSort.setOnClickListener {
+            sort = if (sort == Sort.ASCENDING) Sort.DESCENDING else Sort.ASCENDING
+            realm?.let {
+                listenForResults(it.where(VcCommit::class.java).findAllSorted("dateTimeMillis", sort))
+            }
+        }
         commitList.layoutManager = LinearLayoutManager(this)
 
         commitList.adapter = adapter
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        realm?.close()
+    }
     var adapter = CommitAdapter()
+    var sort = Sort.ASCENDING
     var realm: Realm? = null
+    var resultChangeListener: RealmChangeListener<RealmResults<VcCommit>> = RealmChangeListener { changeSet ->
+        adapter.setData(changeSet)
+    }
+    var realmResults: RealmResults<VcCommit>? = null
 
     override fun onResume() {
         super.onResume()
-        realm = Realm.getDefaultInstance()
         realm?.let { realm ->
             var result = realm.where(VcCommit::class.java).findAllSorted("dateTimeMillis")
-            result.addChangeListener { changeSet ->
-                adapter.setData(changeSet)
-            }
-            adapter.setData(result)
+            listenForResults(result)
         }
+    }
+
+    fun listenForResults(result: RealmResults<VcCommit>?) {
+        realmResults?.removeAllChangeListeners()
+        realmResults = result
+        realmResults?.addChangeListener(resultChangeListener)
+        realmResults?.let { adapter.setData(it) }
     }
 
     override fun onPause() {
         super.onPause()
-        realm?.removeAllChangeListeners()
-        realm?.close()
+        realmResults?.removeAllChangeListeners()
     }
 
 
@@ -138,10 +162,12 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
         LayoutInflater.from(parent.context).inflate(R.layout.commit_view, parent, false)
 ) {
     var label = itemView.findViewById<TextView>(R.id.label)
+    var datetime = itemView.findViewById<TextView>(R.id.datetime)
     var btnDelete = itemView.findViewById<Button>(R.id.btnDelete)
 
     fun bind(commit: VcCommit) {
-        label.setText(commit.message)
+        label.text = commit.message
+        datetime.text = dateFormatter.format(commit.dateTime)
         btnDelete.tag = commit.id
         btnDelete.setOnClickListener {
             var commitId = btnDelete.tag as String
