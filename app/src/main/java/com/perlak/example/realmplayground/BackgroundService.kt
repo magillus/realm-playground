@@ -18,7 +18,7 @@ class BackgroundService : IntentService("Test background") {
     override fun onHandleIntent(intent: Intent?) {
         when (intent?.action) {
             ACTION_GENERATE -> {
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransaction { r ->
                         r.deleteAll()
                     }
@@ -27,7 +27,7 @@ class BackgroundService : IntentService("Test background") {
                 var startGeneration = System.currentTimeMillis()
                 var repo = repoGenerator.generateData("test")
                 var endGeneration = System.currentTimeMillis()
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransaction { r ->
                         r.insertOrUpdate(repo)
                     }

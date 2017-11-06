@@ -1,8 +1,13 @@
 package com.perlak.example.realmplayground
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.design.widget.Snackbar
+import android.support.v4.app.ActivityCompat
+import android.support.v4.content.ContextCompat
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -28,9 +33,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        storagePermission()
+
         btnGenerate.setOnClickListener { v ->
             Single.fromCallable({
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransaction { r ->
                         r.deleteAll()
                     }
@@ -39,7 +46,7 @@ class MainActivity : AppCompatActivity() {
                 var startGeneration = System.currentTimeMillis()
                 var repo = repoGenerator.generateData("test")
                 var endGeneration = System.currentTimeMillis()
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransactionAsync { r ->
                         r.insertOrUpdate(repo)
                     }
@@ -70,7 +77,7 @@ class MainActivity : AppCompatActivity() {
                 var startCopy = 0L
                 var endCopy = 0L
 
-                var repoInMemory = Realm.getDefaultInstance().use { realm ->
+                var repoInMemory = Realm.getInstance(App.realmConfiguration).use { realm ->
                     startCopy = System.currentTimeMillis()
                     var repoInDb = realm.where(VcRepository::class.java).findFirst()
                     var copyRepo = realm.copyFromRealm(repoInDb)
@@ -94,12 +101,46 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun storagePermission() {
+        val permission = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            Timber.i("Permission to record denied")
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                val builder = AlertDialog.Builder(this)
+                builder.setMessage("Permission to access the SD-CARD is required for this app to Download PDF.")
+                        .setTitle("Permission required")
+
+                builder.setPositiveButton("OK", { dialog, id ->
+                    Timber.i("Clicked")
+                    makeRequest()
+                })
+
+                val dialog = builder.create()
+                dialog.show()
+
+            } else {
+                makeRequest()
+            }
+        }
+    }
+
+    val REQUEST_WRITE_STORAGE = 222
+    fun makeRequest() {
+        ActivityCompat.requestPermissions(this,
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+                REQUEST_WRITE_STORAGE)
+    }
+
     var adapter = CommitAdapter()
     var realm: Realm? = null
 
     override fun onResume() {
         super.onResume()
-        realm = Realm.getDefaultInstance()
+        realm = Realm.getInstance(App.realmConfiguration)
         realm?.let { r ->
             var result = r.where(VcCommit::class.java).findAllSorted("dateTimeMillis")
             result.addChangeListener { changeSet ->
@@ -114,6 +155,11 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         realm?.close()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        App.initConfig()
     }
 }
 
@@ -154,7 +200,7 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
                     // no need it if we use async transaction
 
                     Timber.i("Directly delete commit $commitId")
-                    Realm.getDefaultInstance().use { realm ->
+                    Realm.getInstance(App.realmConfiguration).use { realm ->
                         realm.executeTransaction { r ->
                             r.where(VcCommit::class.java).equalTo("id", commitId).findAll().deleteAllFromRealm()
                         }

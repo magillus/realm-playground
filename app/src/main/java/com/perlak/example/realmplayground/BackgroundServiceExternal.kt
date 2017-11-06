@@ -21,7 +21,7 @@ class BackgroundServiceExternal : IntentService("Test background external") {
     override fun onHandleIntent(intent: Intent?) {
         when (intent?.action) {
             ACTION_GENERATE -> {
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransaction { r ->
                         r.deleteAll()
                     }
@@ -30,7 +30,7 @@ class BackgroundServiceExternal : IntentService("Test background external") {
                 var startGeneration = System.currentTimeMillis()
                 var repo = repoGenerator.generateData("test")
                 var endGeneration = System.currentTimeMillis()
-                Realm.getDefaultInstance().use { realm ->
+                Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransaction { r ->
                         r.insertOrUpdate(repo)
                     }
@@ -43,7 +43,7 @@ class BackgroundServiceExternal : IntentService("Test background external") {
             ACTION_DELETE_COMMIT -> {
                 var id = intent.getStringExtra(EXTRA_ID)
                 Timber.i("Deleting commit on separate process: $id")
-                Realm.getDefaultInstance().use {
+                Realm.getInstance(App.realmConfiguration).use {
                     it.executeTransaction { realm ->
                         realm.where(VcCommit::class.java).equalTo("id", id).findAll().deleteAllFromRealm()
                     }
