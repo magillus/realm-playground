@@ -36,16 +36,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 var repoGenerator = RepoGenerator()
-                var startGeneration = System.nanoTime()
+                var startGeneration = System.currentTimeMillis()
                 var repo = repoGenerator.generateData("test")
-                var endGeneration = System.nanoTime()
+                var endGeneration = System.currentTimeMillis()
                 Realm.getDefaultInstance().use { realm ->
                     realm.executeTransactionAsync { r ->
                         r.insertOrUpdate(repo)
                     }
                 }
-                var endInsert = System.nanoTime()
-                return@fromCallable "generation: ${(endGeneration - startGeneration) / 10000000f} ms\n db insert: ${(endInsert - endGeneration) / 1000000f} ms "
+                var endInsert = System.currentTimeMillis()
+                return@fromCallable "generation: ${(endGeneration - startGeneration)} ms\n db async insert: ${(endInsert - endGeneration)} ms "
             }).subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ msg ->
@@ -70,22 +70,15 @@ class MainActivity : AppCompatActivity() {
                 var startCopy = 0L
                 var endCopy = 0L
 
-                val runtime = Runtime.getRuntime()
-
-                val before = runtime.totalMemory() - runtime.freeMemory()
-
                 var repoInMemory = Realm.getDefaultInstance().use { realm ->
-                    startCopy = System.nanoTime()
+                    startCopy = System.currentTimeMillis()
                     var repoInDb = realm.where(VcRepository::class.java).findFirst()
                     var copyRepo = realm.copyFromRealm(repoInDb)
-                    endCopy = System.nanoTime()
+                    endCopy = System.currentTimeMillis()
                     return@use copyRepo
                 }
-                val after = runtime.totalMemory() - runtime.freeMemory()
 
-                var size = (after - before) / 1024f
-
-                return@fromCallable "copy from DB to Memory: ${(endCopy - startCopy) / 1000000f} ms, takes $size bytes"
+                return@fromCallable "copy from DB to Memory: ${(endCopy - startCopy)} ms"
             })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())

@@ -2,6 +2,7 @@ package com.perlak.example.realmplayground
 
 import android.app.IntentService
 import android.content.Intent
+import android.widget.Toast
 import com.perlak.example.realmplayground.model.RepoGenerator
 import io.realm.Realm
 import timber.log.Timber
@@ -23,16 +24,18 @@ class BackgroundService : IntentService("Test background") {
                     }
                 }
                 var repoGenerator = RepoGenerator()
-                var startGeneration = System.nanoTime()
+                var startGeneration = System.currentTimeMillis()
                 var repo = repoGenerator.generateData("test")
-                var endGeneration = System.nanoTime()
+                var endGeneration = System.currentTimeMillis()
                 Realm.getDefaultInstance().use { realm ->
                     realm.executeTransaction { r ->
                         r.insertOrUpdate(repo)
                     }
                 }
-                var endInsert = System.nanoTime()
-                Timber.i("generation: ${(endGeneration - startGeneration) / 10000000f} ms\n db insert: ${(endInsert - endGeneration) / 1000000f} ms ")
+                var endInsert = System.currentTimeMillis()
+                var msg = "generation: ${(endGeneration - startGeneration)} ms\n db insert: ${(endInsert - endGeneration)} ms "
+                Timber.i(msg)
+                Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
             }
         }
     }

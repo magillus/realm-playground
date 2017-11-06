@@ -12,5 +12,7 @@ class App : Application() {
         super.onCreate()
         Timber.plant(Timber.DebugTree())
         Realm.init(this)
+        Realm.compactRealm(
+                Realm.getDefaultConfiguration())
     }
 }
