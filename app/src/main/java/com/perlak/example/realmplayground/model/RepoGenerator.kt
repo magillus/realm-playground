@@ -19,8 +19,8 @@ class RepoGenerator() {
     }
 
     fun generateData(name: String): VcRepository {
-        var users = generateUsers("test", 20)
-        var repository = generateRepository("http://example.com/repo_A", "test_A", 1000, users)
+        var users = generateUsers("test", 100)
+        var repository = generateRepository("http://example.com/repo_A", "test_A", 100000, users)
         return repository
     }
 

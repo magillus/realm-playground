@@ -23,11 +23,15 @@ class MainActivity : AppCompatActivity() {
 
         btnGenerate.setOnClickListener { v ->
             Single.fromCallable {
+                Realm.getDefaultInstance().use { realm->
+                    realm.executeTransaction{ r->
+                        r.deleteAll()
+                    }
+                }
                 var repoGenerator = RepoGenerator()
                 var repo = repoGenerator.generateData("test")
                 Realm.getDefaultInstance().use { realm ->
                     realm.executeTransactionAsync { r ->
-                        r.deleteAll()
                         r.insertOrUpdate(repo)
                     }
                 }
@@ -49,8 +53,10 @@ class MainActivity : AppCompatActivity() {
             var result = r.where(VcCommit::class.java).findAllSorted("dateTimeMillis")
             result.addChangeListener { changeSet ->
                 adapter.setData(changeSet)
+                label.text = "Total commits: ${changeSet.size}"
             }
             adapter.setData(result)
+            label.text = "Total commits: ${result.size}"
         }
     }
 
@@ -67,7 +73,7 @@ class CommitAdapter(var commitList: List<VcCommit> = emptyList()) : RecyclerView
     }
 
     override fun onBindViewHolder(holder: CommitViewHolder?, position: Int) {
-        holder?.bind(commitList[position])
+        holder?.bind(commitList[position], position)
     }
 
     override fun getItemCount(): Int {
@@ -86,8 +92,8 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
     var label = itemView.findViewById<TextView>(R.id.label)
     var btnDelete = itemView.findViewById<Button>(R.id.btnDelete)
 
-    fun bind(commit: VcCommit) {
-        label.setText(commit.message)
+    fun bind(commit: VcCommit, position:Int) {
+        label.text = "#$position ${commit.message}"
         btnDelete.tag = commit.id
         btnDelete.setOnClickListener {
             var commitId = btnDelete.tag as String
