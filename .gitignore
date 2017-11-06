@@ -1,5 +1,4 @@
 */build
-.gitignore
 .gradle
 .idea
 build
@@ -8,3 +7,5 @@ build
 /realm-playground.iml
 /local.properties
 */*.iml
+/app/app.iml
+/build/
