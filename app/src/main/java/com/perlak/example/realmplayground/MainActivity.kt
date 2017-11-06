@@ -13,7 +13,10 @@ import com.perlak.example.realmplayground.model.RepoGenerator
 import com.perlak.example.realmplayground.model.VcCommit
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
-import io.realm.*
+import io.realm.Realm
+import io.realm.RealmChangeListener
+import io.realm.RealmResults
+import io.realm.Sort
 import kotlinx.android.synthetic.main.activity_main.*
 import java.text.SimpleDateFormat
 
@@ -85,57 +88,6 @@ class MainActivity : AppCompatActivity() {
         realmResults?.removeAllChangeListeners()
     }
 
-
-// for presentation copy paste
-//    fun test1() {
-//
-//        var commit = VcCommit(...)
-//
-//        realm.executeTransaction{
-//            it.insert(commit)
-//            it.insertOrUpdate(commit)
-//            it.copyToRealmOrUpdate(commit)
-//            it.createObjectFromJson(...)
-//            it.createOrUpdateAllFromJson(...)
-//        }
-//
-//
-//        var commit = realm.createObject(VcCommit::class.java)
-//        commit.id = "test"
-//        commit.message= " Test Message "
-//
-//        // no easy eay yet
-//        realm.where(VcCommit::class.java)
-//                .equalTo("id", commit.id)
-//                .findAll()
-//                .deleteAllFromRealm()
-//
-//        var yesterdayMilis = 1L
-//
-//        realm.where(VcCommit::class.java)
-//                .greaterThan("dateTimeMillis", yesterdayMilis)
-//                .like("message", "My super commit")
-//                .between("dateTimeMillis",, 100L, 200L)
-//                .equalTo("user.id", 100L)
-//                .or()
-//                .and()
-//                .not()
-//                .beginGroup()
-//                .endGroup()
-//                . ...
-//
-//                ("field")
-//
-//        var activeTrans:RealmAsyncTask = realm.executeTransactionAsync{
-//
-//        }
-//        // optional methods
-//        if (activeTrans.isCancelled) {
-//            activeTrans.cancel()
-//        }
-//
-//
-//    }
 }
 
 class CommitAdapter(var commitList: List<VcCommit> = emptyList()) : RecyclerView.Adapter<CommitViewHolder>() {
