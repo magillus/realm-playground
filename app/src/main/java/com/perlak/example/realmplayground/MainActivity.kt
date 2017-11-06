@@ -1,6 +1,8 @@
 package com.perlak.example.realmplayground
 
+import android.content.Intent
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -8,12 +10,17 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import com.perlak.example.realmplayground.model.RepoGenerator
 import com.perlak.example.realmplayground.model.VcCommit
+import com.perlak.example.realmplayground.model.VcRepository
 import io.reactivex.Single
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
+import timber.log.Timber
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,21 +29,72 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         btnGenerate.setOnClickListener { v ->
-            Single.fromCallable {
-                Realm.getDefaultInstance().use { realm->
-                    realm.executeTransaction{ r->
+            Single.fromCallable({
+                Realm.getDefaultInstance().use { realm ->
+                    realm.executeTransaction { r ->
                         r.deleteAll()
                     }
                 }
                 var repoGenerator = RepoGenerator()
+                var startGeneration = System.nanoTime()
                 var repo = repoGenerator.generateData("test")
+                var endGeneration = System.nanoTime()
                 Realm.getDefaultInstance().use { realm ->
                     realm.executeTransactionAsync { r ->
                         r.insertOrUpdate(repo)
                     }
                 }
-            }.subscribeOn(Schedulers.io()).subscribe()
+                var endInsert = System.nanoTime()
+                return@fromCallable "generation: ${(endGeneration - startGeneration) / 10000000f} ms\n db insert: ${(endInsert - endGeneration) / 1000000f} ms "
+            }).subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ msg ->
+                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                        Timber.i(msg)
+                    })
         }
+        btnGenerateServiceExternal.setOnClickListener({
+            var intent = Intent(this, BackgroundServiceExternal::class.java)
+            intent.action = BackgroundService.ACTION_GENERATE
+            startService(intent)
+        })
+
+        btnGenerateService.setOnClickListener({
+            var intent = Intent(this, BackgroundService::class.java)
+            intent.action = BackgroundService.ACTION_GENERATE
+            startService(intent)
+        })
+
+        btnCopyFromDb.setOnClickListener({
+            Single.fromCallable({
+                var startCopy = 0L
+                var endCopy = 0L
+
+                val runtime = Runtime.getRuntime()
+
+                val before = runtime.totalMemory() - runtime.freeMemory()
+
+                var repoInMemory = Realm.getDefaultInstance().use { realm ->
+                    startCopy = System.nanoTime()
+                    var repoInDb = realm.where(VcRepository::class.java).findFirst()
+                    var copyRepo = realm.copyFromRealm(repoInDb)
+                    endCopy = System.nanoTime()
+                    return@use copyRepo
+                }
+                val after = runtime.totalMemory() - runtime.freeMemory()
+
+                var size = (after - before) / 1024f
+
+                return@fromCallable "copy from DB to Memory: ${(endCopy - startCopy) / 1000000f} ms, takes $size bytes"
+            })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ msg ->
+                        Timber.i(msg)
+                        Snackbar.make(btnCopyFromDb, msg, Snackbar.LENGTH_LONG).show()
+                    })
+        })
+
         commitList.layoutManager = LinearLayoutManager(this)
 
         commitList.adapter = adapter
@@ -91,15 +149,18 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
 ) {
     var label = itemView.findViewById<TextView>(R.id.label)
     var btnDelete = itemView.findViewById<Button>(R.id.btnDelete)
+    var btnDeleteEx = itemView.findViewById<Button>(R.id.btnDeleteEx)
 
-    fun bind(commit: VcCommit, position:Int) {
+    fun bind(commit: VcCommit, position: Int) {
         label.text = "#$position ${commit.message}"
         btnDelete.tag = commit.id
-        btnDelete.setOnClickListener {
+        btnDelete.setOnClickListener({
             var commitId = btnDelete.tag as String
             if (commitId != null) {
                 Single.fromCallable {
                     // no need it if we use async transaction
+
+                    Timber.i("Directly delete commit $commitId")
                     Realm.getDefaultInstance().use { realm ->
                         realm.executeTransaction { r ->
                             r.where(VcCommit::class.java).equalTo("id", commitId).findAll().deleteAllFromRealm()
@@ -107,6 +168,18 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
                     }
                 }.subscribeOn(Schedulers.io()).subscribe()
             }
-        }
+        })
+        btnDeleteEx.tag = commit.id
+        btnDeleteEx.setOnClickListener({
+            var commitId = btnDeleteEx.tag as String
+            if (commitId != null) {
+                var ctx = btnDeleteEx.context
+                var deleteIntent = Intent(ctx, BackgroundServiceExternal::class.java)
+                deleteIntent.action = BackgroundServiceExternal.ACTION_DELETE_COMMIT
+                deleteIntent.putExtra(BackgroundServiceExternal.EXTRA_ID, commitId)
+                ctx.startService(deleteIntent)
+                Timber.i("Posting to delete commit $commitId")
+            }
+        })
     }
 }

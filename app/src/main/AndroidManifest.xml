@@ -17,6 +17,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".BackgroundServiceExternal"
+            android:process=":external" />
+
+        <service
+            android:name=".BackgroundService"
+            android:exported="true" />
     </application>
 
 </manifest>

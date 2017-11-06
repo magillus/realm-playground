@@ -7,12 +7,23 @@
     tools:context="com.perlak.example.realmplayground.MainActivity">
 
     <Button
+        android:id="@+id/btnGenerateServiceExternal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="GENERATE SERVICE EX"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnGenerate" />
+
+    <Button
         android:id="@+id/btnGenerate"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="Generate Repository"
+        android:text="Generate"
+        app:layout_constraintEnd_toEndOf="@+id/btnGenerateServiceExternal"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -27,21 +38,42 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnGenerate" />
+        app:layout_constraintTop_toBottomOf="@+id/btnGenerateService" />
 
     <TextView
         android:id="@+id/label"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="TextView"
+        app:layout_constraintEnd_toEndOf="@+id/btnCopyFromDb"
+        app:layout_constraintStart_toStartOf="@+id/btnCopyFromDb"
+        app:layout_constraintTop_toBottomOf="@+id/btnCopyFromDb" />
+
+    <Button
+        android:id="@+id/btnCopyFromDb"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="TextView"
+        android:text="Copy From DB"
         app:layout_constraintBottom_toTopOf="@+id/commitList"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/btnGenerate"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnGenerateService"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="GENERATE SERVICE"
+        app:layout_constraintEnd_toEndOf="@+id/btnGenerateServiceExternal"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnGenerateServiceExternal" />
 
 
 </android.support.constraint.ConstraintLayout>
