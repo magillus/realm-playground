@@ -7,5 +7,6 @@ build
 /realm-playground.iml
 /local.properties
 */*.iml
-/app/app.iml
+
 /build/
+/app/app.iml
