@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.perlak.example.realmplayground">
+    package="com.perlak.example.repoviewer">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
-        android:name=".App"
-
-        android:resizeableActivity="true"
         android:allowBackup="true"
+        android:resizeableActivity="true"
+        android:name="com.perlak.example.repoviewers.App"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -22,14 +21,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <service
-            android:name=".BackgroundServiceExternal"
-            android:process=":external" />
-
-        <service
-            android:name=".BackgroundService"
-            android:exported="true" />
     </application>
 
 </manifest>

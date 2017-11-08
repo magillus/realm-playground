@@ -1,10 +1,9 @@
-package com.perlak.example.realmplayground
+package com.perlak.example.repoviewer
 
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.support.design.widget.Snackbar
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AlertDialog
@@ -15,17 +14,13 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
-import com.perlak.example.common.model.RepoGenerator
 import com.perlak.example.common.model.VcCommit
-import com.perlak.example.common.model.VcRepository
+import com.perlak.example.repoviewers.App
 import io.reactivex.Single
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_main.*
 import timber.log.Timber
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -34,66 +29,6 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         storagePermission()
-
-        btnGenerate.setOnClickListener { v ->
-            Single.fromCallable({
-                Realm.getInstance(App.realmConfiguration).use { realm ->
-                    realm.executeTransaction { r ->
-                        r.deleteAll()
-                    }
-                }
-                var repoGenerator = RepoGenerator()
-                var startGeneration = System.currentTimeMillis()
-                var repo = repoGenerator.generateData("test")
-                var endGeneration = System.currentTimeMillis()
-                Realm.getInstance(App.realmConfiguration).use { realm ->
-                    realm.executeTransactionAsync { r ->
-                        r.insertOrUpdate(repo)
-                    }
-                }
-                var endInsert = System.currentTimeMillis()
-                return@fromCallable "generation: ${(endGeneration - startGeneration)} ms\n db async insert: ${(endInsert - endGeneration)} ms "
-            }).subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ msg ->
-                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-                        Timber.i(msg)
-                    })
-        }
-        btnGenerateServiceExternal.setOnClickListener({
-            var intent = Intent(this, BackgroundServiceExternal::class.java)
-            intent.action = BackgroundService.ACTION_GENERATE
-            startService(intent)
-        })
-
-        btnGenerateService.setOnClickListener({
-            var intent = Intent(this, BackgroundService::class.java)
-            intent.action = BackgroundService.ACTION_GENERATE
-            startService(intent)
-        })
-
-        btnCopyFromDb.setOnClickListener({
-            Single.fromCallable({
-                var startCopy = 0L
-                var endCopy = 0L
-
-                var repoInMemory = Realm.getInstance(App.realmConfiguration).use { realm ->
-                    startCopy = System.currentTimeMillis()
-                    var repoInDb = realm.where(VcRepository::class.java).findFirst()
-                    var copyRepo = realm.copyFromRealm(repoInDb)
-                    endCopy = System.currentTimeMillis()
-                    return@use copyRepo
-                }
-
-                return@fromCallable "copy from DB to Memory: ${(endCopy - startCopy)} ms"
-            })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ msg ->
-                        Timber.i(msg)
-                        Snackbar.make(btnCopyFromDb, msg, Snackbar.LENGTH_LONG).show()
-                    })
-        })
 
         commitList.layoutManager = LinearLayoutManager(this)
 
@@ -140,6 +75,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+
         realm = Realm.getInstance(App.realmConfiguration)
         realm?.let { r ->
             var result = r.where(VcCommit::class.java).findAllSorted("dateTimeMillis")
@@ -162,6 +98,7 @@ class MainActivity : AppCompatActivity() {
         App.initConfig()
     }
 }
+
 
 class CommitAdapter(var commitList: List<VcCommit> = emptyList()) : RecyclerView.Adapter<CommitViewHolder>() {
     fun setData(newCommits: List<VcCommit>) {
@@ -188,7 +125,6 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
 ) {
     var label = itemView.findViewById<TextView>(R.id.label)
     var btnDelete = itemView.findViewById<Button>(R.id.btnDelete)
-    var btnDeleteEx = itemView.findViewById<Button>(R.id.btnDeleteEx)
 
     fun bind(commit: VcCommit, position: Int) {
         label.text = "#$position ${commit.message}"
@@ -206,18 +142,6 @@ class CommitViewHolder(parent: ViewGroup) : RecyclerView.ViewHolder(
                         }
                     }
                 }.subscribeOn(Schedulers.io()).subscribe()
-            }
-        })
-        btnDeleteEx.tag = commit.id
-        btnDeleteEx.setOnClickListener({
-            var commitId = btnDeleteEx.tag as String
-            if (commitId != null) {
-                var ctx = btnDeleteEx.context
-                var deleteIntent = Intent(ctx, BackgroundServiceExternal::class.java)
-                deleteIntent.action = BackgroundServiceExternal.ACTION_DELETE_COMMIT
-                deleteIntent.putExtra(BackgroundServiceExternal.EXTRA_ID, commitId)
-                ctx.startService(deleteIntent)
-                Timber.i("Posting to delete commit $commitId")
             }
         })
     }

@@ -3,8 +3,8 @@ package com.perlak.example.realmplayground
 import android.app.IntentService
 import android.content.Intent
 import android.widget.Toast
-import com.perlak.example.realmplayground.model.RepoGenerator
-import com.perlak.example.realmplayground.model.VcCommit
+import com.perlak.example.common.model.RepoGenerator
+import com.perlak.example.common.model.VcCommit
 import io.realm.Realm
 import timber.log.Timber
 

@@ -1,4 +1,4 @@
-package com.perlak.example.realmplayground.model
+package com.perlak.example.common.model
 
 import java.util.*
 import kotlin.collections.ArrayList
