@@ -1,9 +1,7 @@
 package com.perlak.example.repoviewers
 
 import android.app.Application
-import android.os.Environment
-import android.os.Environment.DIRECTORY_DOCUMENTS
-import com.perlak.example.common.Constants
+import com.perlak.example.common.model.TestConfiguration
 import io.realm.Realm
 import io.realm.RealmConfiguration
 import timber.log.Timber
@@ -27,12 +25,7 @@ class App : Application() {
         fun initConfig() {
 
             try {
-                Timber.i("Db file: ${Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS)}")
-                realmConfiguration = RealmConfiguration.Builder()
-                        .directory(Environment.getExternalStoragePublicDirectory(DIRECTORY_DOCUMENTS))
-                        .name(Constants.DB_NAME)
-                        .schemaVersion(1)
-                        .build()
+                realmConfiguration = TestConfiguration.getRealmConfig()
             } catch (e: Exception) {
                 Timber.w("Error on opening db directory")
                 realmConfiguration = Realm.getDefaultConfiguration()!!

@@ -11,6 +11,8 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
@@ -44,7 +46,7 @@ class MainActivity : AppCompatActivity() {
             Timber.i("Permission to record denied")
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 val builder = AlertDialog.Builder(this)
                 builder.setMessage("Permission to access the SD-CARD is required for this app to Download PDF.")
                         .setTitle("Permission required")
@@ -77,6 +79,10 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         realm = Realm.getInstance(App.realmConfiguration)
+        refresh()
+    }
+
+    fun refresh() {
         realm?.let { r ->
             var result = r.where(VcCommit::class.java).findAllSorted("dateTimeMillis")
             result.addChangeListener { changeSet ->
@@ -86,6 +92,19 @@ class MainActivity : AppCompatActivity() {
             adapter.setData(result)
             label.text = "Total commits: ${result.size}"
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        if (item?.itemId == R.id.refresh) {
+            refresh()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onStop() {

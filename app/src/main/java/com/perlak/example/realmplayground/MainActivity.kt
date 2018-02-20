@@ -48,15 +48,25 @@ class MainActivity : AppCompatActivity() {
                 var endGeneration = System.currentTimeMillis()
                 Realm.getInstance(App.realmConfiguration).use { realm ->
                     realm.executeTransactionAsync { r ->
+                        val startInsertAsync = System.currentTimeMillis()
                         r.insertOrUpdate(repo)
+                        val endInsertAsync = System.currentTimeMillis()
+                        var msg = "generation: ${(endGeneration - startGeneration)} ms\n db async insert: ${(endInsertAsync - startInsertAsync)} ms "
+                        Timber.i(msg)
+                        Single.fromCallable { msg }
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe({ msg ->
+                                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                                })
+
                     }
                 }
                 var endInsert = System.currentTimeMillis()
-                return@fromCallable "generation: ${(endGeneration - startGeneration)} ms\n db async insert: ${(endInsert - endGeneration)} ms "
+                return@fromCallable "generation: ${(endGeneration - startGeneration)} ms\n db async call: ${(endInsert - endGeneration)} ms "
             }).subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe({ msg ->
-                        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                        //Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
                         Timber.i(msg)
                     })
         }
@@ -109,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             Timber.i("Permission to record denied")
 
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                            Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                 val builder = AlertDialog.Builder(this)
                 builder.setMessage("Permission to access the SD-CARD is required for this app to Download PDF.")
                         .setTitle("Permission required")
